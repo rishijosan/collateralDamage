@@ -7,43 +7,53 @@ Created on Mar 25, 2014
 import requests, json, base64, dns.message
 from StringIO import StringIO
 import os
-
-
-
+import cPickle as pickle
 
 key_createMeasurement = os.getenv('ripeCreateMeasurement')
-
 key_editMeasurement = os.getenv('ripeEditMeasurement')
-
 key_getProbeInfo = os.getenv('ripeGetProbeInfo')
-
 key_getRes = os.getenv('ripeGetRes')
 
 
 createLink = 'https://atlas.ripe.net/api/v1/measurement/?key=' + key_createMeasurement
 headers = {'content-type': 'application/json'}
 
-target = '87.105.250.3'
+#target = ['87.105.250.3','209.244.0.3', '208.67.222.222' ]
+
+
+targetIps = []
+ipPrefix = '203.119.35.'
+
+for i in range(100):
+    
+    target = ipPrefix + str(i)
+    targetIps.append(target)
+    
 
 ##########################################    DEFINITIONS    ##############################################################
 definitions = []
-def1 = {}
 
-#Core Description Properties
-def1['target'] =  target
-def1['description'] =  'DNS_API_TWEET'
-def1['type'] =  'dns'
-def1['af'] =  4
-def1['is_oneoff'] =  True
+for i in range(len(targetIps)):
 
-#DNS Specific Properties
-def1['query_class'] =  'IN'
-def1['query_type'] =  'A'
-def1['query_argument'] =  'www.twitter.com'
-def1['recursion_desired'] =  True
-def1['protocol'] =  'UDP'
+    def1 = {}
+    
+    #Core Description Properties
+    def1['target'] =  targetIps[i]
+    def1['description'] =  'Rishi_Find_Lemon_CN ' + str(i)
+    def1['type'] =  'dns'
+    def1['af'] =  4
+    def1['is_oneoff'] =  True
+    
+    #DNS Specific Properties
+    def1['query_class'] =  'IN'
+    def1['query_type'] =  'A'
+    def1['query_argument'] =  'www.facebook.com'
+    def1['recursion_desired'] =  True
+    def1['protocol'] =  'UDP'
+    
+    definitions.append(def1)
 
-definitions.append(def1)
+
 defIo = StringIO()
 json.dump(definitions,defIo)
 ##########################################    END  OF DEFINITIONS    ##############################################################
@@ -52,16 +62,20 @@ json.dump(definitions,defIo)
 
 ##########################################    PROBES    ##############################################################
 probes = []
+
+
+#for i in range(3):
+
 probe1 = {}
-
 #Core Description Properties
-probe1['requested'] =  15
+probe1['requested'] =  10
 probe1['type'] =  'country'
-probe1['value'] =  'cl'
-
-
-
+probe1['value'] =  'cn'
 probes.append(probe1)
+
+
+
+
 probeIo = StringIO()
 json.dump(probes,probeIo)
 ##########################################    END  OF PROBES    ##############################################################
@@ -75,26 +89,8 @@ createDNSJson['probes']= probes
 
 
 req = requests.post(createLink, data=json.dumps(createDNSJson), headers=headers)
-measurement = req.json().get('measurements')[0]
+measurement = req.json().get('measurements')
 
-measurement = '1598006'
-#1598006
-#1598012
-
-#getResLink = 'https://atlas.ripe.net/api/v1/measurement/' + measurement + '/result/?key=' + key_getRes
-newLink = 'https://atlas.ripe.net/api/v1/measurement/' + str(measurement) + '/result/'
-
-req = requests.get(newLink, headers=headers)
-resSet = req.json()
-
-for item in resSet:
-    abuf = item.get('result').get('abuf')
-    dnsMessage = dns.message.from_wire(base64.b64decode(abuf))
-    print dnsMessage
-    print ""
-
-
-    
-    
-
-
+#Save list of measurements
+with open('/media/sf_G_DRIVE/measurementsCN.pk', 'wb') as output:
+    pickle.dump(measurement, output, protocol=0)
