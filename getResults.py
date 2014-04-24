@@ -22,42 +22,45 @@ def IPFromMessage(dnsMess):
 
 #Get results for a list of measurements
 def getRes(measurements):
-    respList = []
-    dnsMessageList = []
-    jsonList = []
     
+    jsonList = []
     for meas in measurements:
-        
         newLink = 'https://atlas.ripe.net/api/v1/measurement/' + str(meas) + '/result/'
-        
         req = requests.get(newLink, headers=headers)
         resSet = req.json()
+        jsonList.append(resSet)             
+
+    with open('/media/sf_G_DRIVE/colDam/jsonListCN.pk', 'wb') as output:
+        pickle.dump(jsonList, output, protocol=0)
+
+    return jsonList
+
+#Parse result JSON to extract DNS Responses
+def parseResults(resSet):
+    dnsMessageList = [] #Complete DNS Message Response
+    respList = [] #List which stores dst_addr, from, src_addr and resolved IP
         
-        jsonList.append(resSet)
-        
-        for item in resSet:
-            if item.has_key('result'): 
+    for meas in resSet:
+        for probe in meas:
+            if probe.has_key('result'): 
                 respRow = []
-                abuf = item.get('result').get('abuf')
+                abuf = probe.get('result').get('abuf')
                 dnsMessage = dns.message.from_wire(base64.b64decode(abuf))
                 dnsMessageList.append(dnsMessage)
                 
-                respRow.append(item['dst_addr'])
-                respRow.append(item['from'])
-                respRow.append(item['src_addr'])
+                respRow.append(probe['dst_addr'])
+                respRow.append(probe['from'])
+                respRow.append(probe['src_addr'])
                 respRow.append(IPFromMessage(dnsMessage))
                 respList.append(respRow)
-                
+        
+    return dnsMessageList, respList
 
-
-    with open('/media/sf_G_DRIVE/jsonListCN.pk', 'wb') as output:
-        pickle.dump(jsonList, output, protocol=0)
-
-    return dnsMessageList, respList, jsonList
-
+#Decode abuf 
 def decode(abuf):
     print dns.message.from_wire(base64.b64decode(abuf))
-    
+
+#Create a set of Unique IPs received for a set of measurements    
 def getUniqueIps(dnsResp):
     ipSet = set()
     
@@ -75,10 +78,15 @@ def getUniqueIps(dnsResp):
    
     
 #List of measurements
-with open('/media/sf_G_DRIVE/measurementsCN.pk', 'rb') as inp:
+with open('/media/sf_G_DRIVE/colDam/measurementsCN.pk', 'rb') as inp:
     measList = pickle.load(inp)
     
-dnsResp,respList,jsonList = getRes(measList)
+#Load previously saved jsonList
+with open('/media/sf_G_DRIVE/colDam/jsonListCN.pk', 'rb') as inp:
+    jsonList = pickle.load(inp)
+    
+#jsonList = getRes(measList)
+dnsResp,respList = parseResults(jsonList)
 lemonIps = getUniqueIps(dnsResp)
 
 
