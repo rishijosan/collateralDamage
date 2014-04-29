@@ -20,15 +20,21 @@ headers = {'content-type': 'application/json'}
 
 #target = ['87.105.250.3','209.244.0.3', '208.67.222.222' ]
 
+typeMeas = 'tr' # 'dns'
 
 targetIps = []
-ipPrefix = '203.119.35.'
 
-for i in range(100):
+if typeMeas == 'dns':
+    ipPrefix = '203.119.35.'
     
-    target = ipPrefix + str(i)
-    targetIps.append(target)
-    
+    for i in range(100):
+        
+        target = ipPrefix + str(i)
+        targetIps.append(target)
+        
+if typeMeas == 'tr':
+    targetIps.append('203.119.35.100')
+        
 
 ##########################################    DEFINITIONS    ##############################################################
 definitions = []
@@ -39,17 +45,27 @@ for i in range(len(targetIps)):
     
     #Core Description Properties
     def1['target'] =  targetIps[i]
-    def1['description'] =  'Rishi_Find_Lemon_CN ' + str(i)
-    def1['type'] =  'dns'
     def1['af'] =  4
     def1['is_oneoff'] =  True
     
+    
     #DNS Specific Properties
-    def1['query_class'] =  'IN'
-    def1['query_type'] =  'A'
-    def1['query_argument'] =  'www.facebook.com'
-    def1['recursion_desired'] =  True
-    def1['protocol'] =  'UDP'
+    if typeMeas == 'dns':
+        def1['type'] =  'dns'
+        def1['description'] =  'Rishi_Find_Lemon_CN ' + str(i)
+        def1['query_class'] =  'IN'
+        def1['query_type'] =  'A'
+        def1['query_argument'] =  'www.facebook.com'
+        def1['recursion_desired'] =  True
+        def1['protocol'] =  'UDP'
+    
+    #Traceroute Specific Properties
+    if typeMeas == 'tr':
+        def1['description'] =  'Rishi_tracert_IR_CN ' + str(i)
+        def1['type'] =  'traceroute' 
+        def1['protocol'] = 'ICMP' #UDP
+        
+    
     
     definitions.append(def1)
 
@@ -67,11 +83,22 @@ probes = []
 #for i in range(3):
 
 probe1 = {}
-#Core Description Properties
-probe1['requested'] =  10
-probe1['type'] =  'country'
-probe1['value'] =  'cn'
-probes.append(probe1)
+
+if typeMeas == 'dns':
+    #Core Description Properties
+    probe1['requested'] =  10
+    probe1['type'] =  'country'
+    probe1['value'] =  'cn'
+    probes.append(probe1)
+    
+if typeMeas == 'tr':
+    probe1['requested'] =  1
+    probe1['type'] =  'probes'
+    probe1['value'] =  '12464'
+    probes.append(probe1)
+    
+
+
 
 
 

@@ -86,6 +86,10 @@ with open('/media/sf_G_DRIVE/colDam/jsonListCN.pk', 'rb') as inp:
     jsonList = pickle.load(inp)
     
 #jsonList = getRes(measList)
+#dnsResp,respList = parseResults(jsonList)
+
+measList = ['1636768']
+jsonList = getRes(measList)
 dnsResp,respList = parseResults(jsonList)
 lemonIps = getUniqueIps(dnsResp)
 
