@@ -56,6 +56,30 @@ def parseResults(resSet):
         
     return dnsMessageList, respList
 
+
+def parseProbeRes(resSet):
+    dnsMessageList = [] #Complete DNS Message Response
+    respList = [] #List which stores dst_addr, from, src_addr and resolved IP
+        
+    for meas in resSet:
+        for probe in meas:
+            if probe.has_key('resultset'): 
+                rs = probe['resultset']
+                for item in rs:
+                    if item.has_key('result'):
+                        respRow = []
+                        abuf = item.get('result').get('abuf')
+                        dnsMessage = dns.message.from_wire(base64.b64decode(abuf))
+                        dnsMessageList.append(dnsMessage)
+                        
+                        respRow.append(item['dst_addr'])
+                        respRow.append(probe['from'])
+                        respRow.append(item['src_addr'])
+                        respRow.append(IPFromMessage(dnsMessage))
+                        respList.append(respRow)
+        
+    return dnsMessageList, respList
+
 #Decode abuf 
 def decode(abuf):
     print dns.message.from_wire(base64.b64decode(abuf))
@@ -78,17 +102,29 @@ def getUniqueIps(dnsResp):
    
     
 #List of measurements
-with open('/media/sf_G_DRIVE/colDam/measurementsCN.pk', 'rb') as inp:
-    measList = pickle.load(inp)
-    
+#===============================================================================
+# with open('/media/sf_G_DRIVE/colDam/bulkMeas1.pk', 'rb') as inp:
+#    measList = pickle.load(inp)
+#    
+#===============================================================================
+
+
 #Load previously saved jsonList
-with open('/media/sf_G_DRIVE/colDam/jsonListCN.pk', 'rb') as inp:
-    jsonList = pickle.load(inp)
+#===============================================================================
+# with open('/media/sf_G_DRIVE/colDam/jsonListCN.pk', 'rb') as inp:
+#    jsonList = pickle.load(inp)
+#===============================================================================
     
 #jsonList = getRes(measList)
 #dnsResp,respList = parseResults(jsonList)
 
-measList = ['1636768']
+measList = [1663497]
+
+#===============================================================================
+# for i in range(1663860, 1663960):
+#    measList.append(i)
+#===============================================================================
+    
 jsonList = getRes(measList)
 dnsResp,respList = parseResults(jsonList)
 lemonIps = getUniqueIps(dnsResp)
